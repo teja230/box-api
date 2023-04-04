@@ -14,7 +14,7 @@ public class BoxService {
         try {
             StorageAPI.upload();
         } catch (IOException e) {
-            logger.error(BOX_SERVICE, "API_1652", "Exception Uploading File", e);
+            logger.error("Exception Uploading File", e);
         }
     }
 }

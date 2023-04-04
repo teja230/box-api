@@ -70,7 +70,7 @@ public class BoxUtility {
 			throw new IOException(String.format("Box connector failed to push the message to url [%s]", url));
 		}
 
-		logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, "Box Responded");
+		logger.info("Box Responded");
 		return null;
 	}
 
@@ -113,9 +113,9 @@ public class BoxUtility {
 			}
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(ex.getMessage());
 		} catch (Exception ex) {
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(ex.getMessage());
 			throw new IOException(String.format("BoxConstants connector failed to push the message to url [%s]", url));
 		}
 
@@ -123,7 +123,7 @@ public class BoxUtility {
 	}
 
 	public static String sendUploadRequest(String url, JsonElement requestBody, byte[] file, String requestMethod, String accessToken, StringBuilder apiError, String appId) throws IOException {
-		logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, String.format("Payload for sendHubRequest: [%s] ", requestBody.toString()));
+		logger.info(String.format("Payload for sendHubRequest: [%s] ", requestBody.toString()));
 		String hubId = null;
 		try {
 			StringBuilder contentType = new StringBuilder();
@@ -137,12 +137,12 @@ public class BoxUtility {
 			JsonObject jsonResponse = HttpUtility.sendHttpRequest(requestBody.toString(), true, file, httpURLConnection, null, appId).getAsJsonObject();
 
 			if (!jsonResponse.isJsonNull() && jsonResponse.size() > 0) {
-				logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, "Response for BoxConstants req: " + jsonResponse.toString());
+				logger.info("Response for BoxConstants req: " + jsonResponse.toString());
 				JsonArray entriesArray = JsonPath.findArray(jsonResponse, BoxConstants.ENTRIES);
 				if (entriesArray != null && entriesArray.size() > 0) {
 					hubId = JsonPath.getValue(entriesArray.get(0), BoxConstants.PropertyNames.ID);
 				}
-				logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, String.format("BoxConstants item id is: [%s]", hubId));
+				logger.info(String.format("BoxConstants item id is: [%s]", hubId));
 			}
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
@@ -152,7 +152,7 @@ public class BoxUtility {
 			throw new IOException(String.format("BoxConstants connector failed to push the message to url [%s]", url));
 		}
 
-		logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, "BoxConstants Item Id: " + hubId);
+		logger.info("BoxConstants Item Id: " + hubId);
 		return hubId;
 	}
 

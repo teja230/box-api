@@ -38,7 +38,7 @@ public class StorageAPI {
 			String settingInput = IOUtils.toString(inputStream);
 			boxSettings = gson.fromJson(settingInput, BoxSettings.class);
 		} catch (IOException e) {
-			logger.error("api", BOX_SERVICE, BOX_1652, "Exception Initializing Box Settings", e);
+			logger.error("Exception Initializing Box Settings", e);
 		}
 	}
 
