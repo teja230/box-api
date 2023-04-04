@@ -12,8 +12,11 @@ import spark.Request;
 import spark.Response;
 import spark.utils.IOUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.storage.api.storage.BoxConstants.*;
@@ -146,56 +149,80 @@ public class StorageAPI {
 		return JsonPath.getValue(JsonPath.findObject(shareResponse, "shared_link"), "url");
 	}
 
-	public static String upload() throws IOException {
+	public static void upload() throws IOException {
 		String requestURL = constructUploadUrl(null);
 
 		StringBuilder apiError = new StringBuilder();
 
-		String fileNaam = "test.jpg";
+		File directory = new File("/Users/ravitejakapalavayi/Downloads/Box");
+		String fileNameRegex = ".*jpeg.*";
 
-		String assetURL = "file:///Users/Teja/Downloads/Box/files/" + fileNaam;
+		List<String> assetURLList = new ArrayList<>();
+		search(directory, fileNameRegex, assetURLList);
 
-		byte[] file = BoxUtility.downloadBlob(assetURL, Integer.parseInt(boxSettings.getMaxFileSize()));
+		for(String assetURL : assetURLList) {
 
-		JsonArray requestQuery = new JsonArray();
+			byte[] file = BoxUtility.downloadBlob(assetURL, Integer.parseInt(boxSettings.getMaxFileSize()));
 
-		JsonObject formData = new JsonObject();
+			JsonArray requestQuery = new JsonArray();
 
-		JsonObject parent = new JsonObject();
-		JsonPath.setValue(parent, ID, boxSettings.getParentFolder());
+			JsonObject formData = new JsonObject();
 
-		String fileId = UUID.randomUUID().toString();
+			JsonObject parent = new JsonObject();
+			JsonPath.setValue(parent, ID, boxSettings.getParentFolder());
 
-		JsonObject attributeObject = new JsonObject();
+			String fileId = UUID.randomUUID().toString();
 
-		StringBuilder fileName = new StringBuilder();
+			JsonObject attributeObject = new JsonObject();
 
-		fileName.append("api");
-		fileName.append(BoxConstants.SPLIT);
-		fileName.append(fileId);
+			StringBuilder fileName = new StringBuilder();
 
-		//TODO Determine File Type extension
-		String[] extension = fileNaam.split("\\.");
-
-		String fileType = extension[extension.length - 1];
-
-		if (!Strings.isNullOrEmpty(fileType)) {
+			fileName.append(fileId);
 			fileName.append(".");
-			fileName.append(fileType);
+			fileName.append("jpg");
+
+			JsonPath.setValue(attributeObject, NAME, fileName.toString());
+
+			attributeObject.add(BoxConstants.PARENT, parent);
+
+			JsonPath.setValue(formData, NAME, ATTRIBUTES);
+			JsonPath.setValue(formData, VALUE, attributeObject);
+			JsonPath.setValue(formData, FILE_ID, BoxConstants.FILE);
+			JsonPath.setValue(formData, FILE_NAME, fileId);
+
+			requestQuery.add(formData);
+
+			BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
 		}
+	}
 
-		JsonPath.setValue(attributeObject, NAME, fileName.toString());
+	public static void search(File file, String fileNameRegex, List<String> assetURLList) {
+		if (file.isDirectory()) {
+			for (File f : Objects.requireNonNull(file.listFiles())) {
+				search(f, fileNameRegex, assetURLList);
+			}
+		} else {
+			if (file.getName().matches(fileNameRegex)) {
+				try {
+					assetURLList.add(file.toURI().toURL().toString());
+				} catch (MalformedURLException ex) {
+					logger.error(BOX_SERVICE, BOX_1652, boxSettings.getAuthurl(), ex);
+				}
+			}
+		}
+	}
 
-		attributeObject.add(BoxConstants.PARENT, parent);
 
-		JsonPath.setValue(formData, NAME, ATTRIBUTES);
-		JsonPath.setValue(formData, VALUE, attributeObject);
-		JsonPath.setValue(formData, FILE_ID, BoxConstants.FILE);
-		JsonPath.setValue(formData, FILE_NAME, fileId);
-
-		requestQuery.add(formData);
-
-		return BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+	public static String generateRandomString(int length) {
+		final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		final SecureRandom random = new SecureRandom();
+		StringBuilder sb = new StringBuilder(length);
+		for (int i = 0; i < length; i++) {
+			int randomIndex = random.nextInt(ALPHABET.length());
+			char randomChar = ALPHABET.charAt(randomIndex);
+			sb.append(randomChar);
+		}
+		return sb.toString();
 	}
 
 
@@ -210,7 +237,7 @@ public class StorageAPI {
 
 			token = BoxUtility.getAccessToken(boxSettings.getAuthurl(), reqBody, "api");
 		} catch (Exception ex) {
-			logger.error("api", BOX_SERVICE, BOX_1652, boxSettings.getAuthurl(), ex);
+			logger.error(BOX_SERVICE, BOX_1652, boxSettings.getAuthurl(), ex);
 		}
 		return token;
 	}
