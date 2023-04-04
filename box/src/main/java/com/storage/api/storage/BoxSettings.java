@@ -11,7 +11,7 @@ public class BoxSettings {
 	String privateKey;
 	String passphrase;
 	String enterpriseID;
-	String parentFolder = "0";
+	String parentFolder = "201988493202";
 	String maxFileSize = "100000";
 	String filePath = "/Users/ravitejakapalavayi/Downloads/Box";
 	String fileExtension = "jpeg";
