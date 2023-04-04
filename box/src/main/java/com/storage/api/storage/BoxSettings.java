@@ -13,6 +13,8 @@ public class BoxSettings {
 	String enterpriseID;
 	String parentFolder = "0";
 	String maxFileSize = "100000";
+	String filePath = "/Users/ravitejakapalavayi/Downloads/Box";
+	String fileExtension = "jpeg";
 
 	public String getBaseurl() {
 		return baseurl;
@@ -100,5 +102,21 @@ public class BoxSettings {
 
 	public void setMaxFileSize(String maxFileSize) {
 		this.maxFileSize = maxFileSize;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getFileExtension() {
+		return fileExtension;
+	}
+
+	public void setFileExtension(String fileExtension) {
+		this.fileExtension = fileExtension;
 	}
 }

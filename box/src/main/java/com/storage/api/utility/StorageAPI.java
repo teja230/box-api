@@ -154,8 +154,8 @@ public class StorageAPI {
 
 		StringBuilder apiError = new StringBuilder();
 
-		File directory = new File("/Users/ravitejakapalavayi/Downloads/Box");
-		String fileNameRegex = ".*jpeg.*";
+		File directory = new File(boxSettings.getFilePath());
+		String fileNameRegex = ".*"+boxSettings.getFileExtension()+".*";
 
 		List<String> assetURLList = new ArrayList<>();
 		search(directory, fileNameRegex, assetURLList);
