@@ -179,7 +179,7 @@ public class StorageAPI {
 
 			fileName.append(fileId);
 			fileName.append(".");
-			fileName.append("jpg");
+			fileName.append(boxSettings.getFileExtension());
 
 			JsonPath.setValue(attributeObject, NAME, fileName.toString());
 
