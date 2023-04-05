@@ -155,7 +155,7 @@ public class StorageAPI {
 		StringBuilder apiError = new StringBuilder();
 
 		File directory = new File(boxSettings.getFilePath());
-		String fileNameRegex = ".*"+boxSettings.getFileExtension()+".*";
+		String fileNameRegex = ".*";
 
 		List<String> assetURLList = new ArrayList<>();
 		search(directory, fileNameRegex, assetURLList);
@@ -178,8 +178,15 @@ public class StorageAPI {
 			StringBuilder fileName = new StringBuilder();
 
 			fileName.append(fileId);
-			fileName.append(".");
-			fileName.append(boxSettings.getFileExtension());
+
+			String[] extension = assetURL.split("\\.");
+
+			String fileType = extension[extension.length - 1];
+
+			if (!Strings.isNullOrEmpty(fileType)) {
+				fileName.append(".");
+				fileName.append(fileType);
+			}
 
 			JsonPath.setValue(attributeObject, NAME, fileName.toString());
 
@@ -192,7 +199,9 @@ public class StorageAPI {
 
 			requestQuery.add(formData);
 
-			BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+			if((fileType.equals("jpg") || fileType.equals("png") || fileType.equals("jpeg"))) {
+				BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+			}
 		}
 	}
 
