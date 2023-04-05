@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.storage.api.storage.BoxConstants.BOX_SERVICE;
-
 public class BoxService {
     private static final Logger logger = LoggerFactory.getLogger(BoxService.class);
     public static void main(String[] args) {
