@@ -2,6 +2,7 @@
 
 ## Pre-requisites
 - Install mvn (version 3.9.0)
+- Download IntelliJ Community Edition
 
 ## Run the following commands:
 
