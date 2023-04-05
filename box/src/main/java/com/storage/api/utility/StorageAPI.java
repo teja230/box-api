@@ -111,6 +111,16 @@ public class StorageAPI {
 		return requestURL.toString();
 	}
 
+	private static String constructFolderUrl() {
+		StringBuilder requestURL = new StringBuilder();
+
+		requestURL.append(boxSettings.getBaseurl());
+		requestURL.append(BACKSLASH);
+		requestURL.append(FOLDERS);
+
+		return requestURL.toString();
+	}
+
 	public static String download(Request req, Response res) throws IOException {
 		GsonBuilder gsonBuilder = new GsonBuilder();
 		Gson gson = gsonBuilder.create();
@@ -145,64 +155,100 @@ public class StorageAPI {
 		sharedLink.add("permissions", permissions);
 		requestQuery.add("shared_link", sharedLink);
 
-		JsonObject shareResponse = BoxUtility.sendShareRequest(requestUrl, requestQuery, PUTREQUESTMETHOD, accessToken, apiError, "api");
+		JsonObject shareResponse = BoxUtility.sendPostRequest(requestUrl, requestQuery, PUTREQUESTMETHOD, accessToken, apiError, "api");
 		return JsonPath.getValue(JsonPath.findObject(shareResponse, "shared_link"), "url");
 	}
 
 	public static void upload() throws IOException {
 		String requestURL = constructUploadUrl(null);
 
-		StringBuilder apiError = new StringBuilder();
-
 		File directory = new File(boxSettings.getFilePath());
 		String fileNameRegex = ".*";
 
-		List<String> assetURLList = new ArrayList<>();
-		search(directory, fileNameRegex, assetURLList);
+		/*List<String> assetURLList = new ArrayList<>();
+		search(directory, fileNameRegex, assetURLList);*/
 
-		for(String assetURL : assetURLList) {
+		Map<String, List<String>> folderMap = new HashMap<>();
+		scanFolder(directory, null, folderMap);
 
-			byte[] file = BoxUtility.downloadBlob(assetURL, Integer.parseInt(boxSettings.getMaxFileSize()));
+		folderMap.forEach((folderName, files) -> {
 
-			JsonArray requestQuery = new JsonArray();
-
-			JsonObject formData = new JsonObject();
-
-			JsonObject parent = new JsonObject();
-			JsonPath.setValue(parent, ID, boxSettings.getParentFolder());
-
-			String fileId = UUID.randomUUID().toString();
-
-			JsonObject attributeObject = new JsonObject();
-
-			StringBuilder fileName = new StringBuilder();
-
-			fileName.append(fileId);
-
-			String[] extension = assetURL.split("\\.");
-
-			String fileType = extension[extension.length - 1];
-
-			if (!Strings.isNullOrEmpty(fileType)) {
-				fileName.append(".");
-				fileName.append(fileType);
+			StringBuilder apiError = new StringBuilder();
+			String folderId = boxSettings.getParentFolder();
+			if(folderName != null) {
+				try {
+					folderId = createFolder(folderName);
+				} catch (IOException e) {
+					logger.error("Exception Creating Folder", e);
+				}
 			}
 
-			JsonPath.setValue(attributeObject, NAME, fileName.toString());
+			for(String assetURL : files) {
+				byte[] file = new byte[0];
+				try {
+					file = BoxUtility.downloadBlob(assetURL, Integer.parseInt(boxSettings.getMaxFileSize()));
+				} catch (IOException e) {
+					logger.error("Exception Downloading File", e);
+				}
 
-			attributeObject.add(BoxConstants.PARENT, parent);
+				JsonArray requestQuery = new JsonArray();
 
-			JsonPath.setValue(formData, NAME, ATTRIBUTES);
-			JsonPath.setValue(formData, VALUE, attributeObject);
-			JsonPath.setValue(formData, FILE_ID, BoxConstants.FILE);
-			JsonPath.setValue(formData, FILE_NAME, fileId);
+				JsonObject formData = new JsonObject();
 
-			requestQuery.add(formData);
+				JsonObject parent = new JsonObject();
+				JsonPath.setValue(parent, ID, folderId);
 
-			if((fileType.equals("jpg") || fileType.equals("png") || fileType.equals("jpeg"))) {
-				BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+				String fileId = UUID.randomUUID().toString();
+
+				JsonObject attributeObject = new JsonObject();
+
+				StringBuilder fileName = new StringBuilder();
+
+				fileName.append(fileId);
+
+				String[] extension = assetURL.split("\\.");
+
+				String fileType = extension[extension.length - 1];
+
+				if (!Strings.isNullOrEmpty(fileType)) {
+					fileName.append(".");
+					fileName.append(fileType);
+				}
+
+				JsonPath.setValue(attributeObject, NAME, fileName.toString());
+
+				attributeObject.add(BoxConstants.PARENT, parent);
+
+				JsonPath.setValue(formData, NAME, ATTRIBUTES);
+				JsonPath.setValue(formData, VALUE, attributeObject);
+				JsonPath.setValue(formData, FILE_ID, BoxConstants.FILE);
+				JsonPath.setValue(formData, FILE_NAME, fileId);
+
+				requestQuery.add(formData);
+
+				if ((fileType.equals("jpg") || fileType.equals("png") || fileType.equals("jpeg"))) {
+					try {
+						BoxUtility.sendUploadRequest(requestURL, requestQuery, file, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+					} catch (IOException ex) {
+						logger.error("Exception Uploading File", ex);
+					}
+				}
 			}
-		}
+		});
+	}
+
+	public static String createFolder(String folderName) throws IOException {
+		String requestURL = constructFolderUrl();
+		StringBuilder apiError = new StringBuilder();
+
+		JsonObject requestQuery = new JsonObject();
+		requestQuery.addProperty("name", folderName);
+		JsonObject parent = new JsonObject();
+		parent.addProperty("id", "0");
+		requestQuery.add("parent", parent);
+
+		JsonObject folderResponse = BoxUtility.sendPostRequest(requestURL, requestQuery, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
+		return JsonPath.getValue(folderResponse, "id");
 	}
 
 	public static void search(File file, String fileNameRegex, List<String> assetURLList) {
@@ -219,6 +265,23 @@ public class StorageAPI {
 				}
 			}
 		}
+	}
+
+	public static void scanFolder(File folder, String parentFolderName, Map<String, List<String>> folderMap) {
+		List<String> fileList = new ArrayList<>();
+		for (File file : Objects.requireNonNull(folder.listFiles())) {
+			if (file.isDirectory()) {
+				scanFolder(file, file.getName(), folderMap);
+			} else {
+				try {
+					fileList.add(file.toURI().toURL().toString());
+				} catch (MalformedURLException ex) {
+					logger.error(BOX_SERVICE, BOX_1652, boxSettings.getAuthurl(), ex);
+				}
+			}
+		}
+		folderMap.put(parentFolderName, fileList);
+
 	}
 
 

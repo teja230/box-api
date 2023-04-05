@@ -96,8 +96,8 @@ public class BoxUtility {
 		return jsonResponse.toString();
 	}
 
-	public static JsonObject sendShareRequest(String url, JsonElement requestBody, String requestMethod, String accessToken, StringBuilder apiError, String appId) throws IOException {
-		logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, String.format("Payload for sendHubRequest: [%s] ", requestBody.toString()));
+	public static JsonObject sendPostRequest(String url, JsonElement requestBody, String requestMethod, String accessToken, StringBuilder apiError, String appId) throws IOException {
+		logger.info(String.format("Payload for sendHubRequest: [%s] ", requestBody.toString()));
 		JsonObject jsonResponse = null;
 		try {
 			StringBuilder contentType = new StringBuilder();
@@ -109,7 +109,7 @@ public class BoxUtility {
 			jsonResponse = HttpUtility.sendHttpRequest(requestBody.toString(), false, null, httpURLConnection, null, appId).getAsJsonObject();
 
 			if (!jsonResponse.isJsonNull() && jsonResponse.size() > 0) {
-				logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, "Response for BoxConstants req: " + jsonResponse.toString());
+				logger.info("Response for BoxConstants req: " + jsonResponse.toString());
 			}
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
