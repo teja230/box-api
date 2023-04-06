@@ -78,6 +78,28 @@ public class StorageAPI {
 		return requestURL.toString();
 	}
 
+	private static String constructGetFolderIdUrl(String folderName) {
+		StringBuilder requestURL = new StringBuilder();
+
+		requestURL.append(boxSettings.getBaseurl());
+		requestURL.append(BACKSLASH);
+		requestURL.append(SEARCH);
+		requestURL.append(QUESTIONMARK);
+
+		requestURL.append(TYPE);
+		requestURL.append(EQUALS);
+		requestURL.append(FOLDER);
+		requestURL.append(AMPERSAND);
+
+		if (!Strings.isNullOrEmpty(folderName)) {
+			requestURL.append(QUERY);
+			requestURL.append(EQUALS);
+			requestURL.append(folderName);
+		}
+
+		return requestURL.toString();
+	}
+
 	private static String constructShareUrl(String fileId) {
 		StringBuilder requestURL = new StringBuilder();
 
@@ -122,16 +144,11 @@ public class StorageAPI {
 	}
 
 	public static String download(Request req, Response res) throws IOException {
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		Gson gson = gsonBuilder.create();
 		StringBuilder apiError = new StringBuilder();
 
 		String fileId = req.params(":id");
 		String requestUrl = constructDownloadUrl(fileId);
-		String filesResponse = BoxUtility.sendGetRequest(requestUrl, GETREQUESTMETHOD, getAccessToken(), apiError, "api");
-		JsonObject fileResponseObject = gson.fromJson(filesResponse, JsonObject.class);
-
-		return fileResponseObject.toString();
+		return BoxUtility.sendGetRequest(requestUrl, GETREQUESTMETHOD, getAccessToken(), apiError, "api");
 	}
 
 	public static String share(Request req, Response res) throws IOException {
@@ -163,10 +180,6 @@ public class StorageAPI {
 		String requestURL = constructUploadUrl(null);
 
 		File directory = new File(boxSettings.getFilePath());
-		String fileNameRegex = ".*";
-
-		/*List<String> assetURLList = new ArrayList<>();
-		search(directory, fileNameRegex, assetURLList);*/
 
 		Map<String, List<String>> folderMap = new HashMap<>();
 		scanFolder(directory, null, folderMap);
@@ -177,7 +190,14 @@ public class StorageAPI {
 			String folderId = boxSettings.getParentFolder();
 			if(folderName != null) {
 				try {
-					folderId = createFolder(folderName);
+					folderId = findFolderId(folderName);
+					if(folderId == null) {
+						folderId = createFolder(folderName, apiError);
+						if(apiError.length() != 0) {
+							logger.error("Error Creating Folder: " + apiError.toString());
+							folderId = apiError.toString().split("id=")[1].split(",")[0];
+						}
+					}
 				} catch (IOException e) {
 					logger.error("Exception Creating Folder", e);
 				}
@@ -237,9 +257,32 @@ public class StorageAPI {
 		});
 	}
 
-	public static String createFolder(String folderName) throws IOException {
-		String requestURL = constructFolderUrl();
+	public static String findFolderId(String folderName) throws IOException {
+		String requestURL = constructGetFolderIdUrl(folderName);
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		Gson gson = gsonBuilder.create();
 		StringBuilder apiError = new StringBuilder();
+
+		String folderResponse = BoxUtility.sendGetRequest(requestURL, GETREQUESTMETHOD, getAccessToken(), apiError, "api");
+
+		JsonObject folderResponseObject = gson.fromJson(folderResponse, JsonObject.class);
+
+		JsonArray entriesArray =  JsonPath.findArray(folderResponseObject, "entries");
+
+		if(entriesArray == null || entriesArray.size() == 0) {
+			return null;
+		}
+		for(JsonElement entry : entriesArray) {
+			JsonObject entryObject = entry.getAsJsonObject();
+			if(JsonPath.getValue(entryObject, "name").equals(folderName)) {
+				return JsonPath.getValue(entryObject, "id");
+			}
+		}
+		return null;
+	}
+
+	public static String createFolder(String folderName, StringBuilder apiError) throws IOException {
+		String requestURL = constructFolderUrl();
 
 		JsonObject requestQuery = new JsonObject();
 		requestQuery.addProperty("name", folderName);
@@ -249,22 +292,6 @@ public class StorageAPI {
 
 		JsonObject folderResponse = BoxUtility.sendPostRequest(requestURL, requestQuery, POSTREQUESTMETHOD, getAccessToken(), apiError, "api");
 		return JsonPath.getValue(folderResponse, "id");
-	}
-
-	public static void search(File file, String fileNameRegex, List<String> assetURLList) {
-		if (file.isDirectory()) {
-			for (File f : Objects.requireNonNull(file.listFiles())) {
-				search(f, fileNameRegex, assetURLList);
-			}
-		} else {
-			if (file.getName().matches(fileNameRegex)) {
-				try {
-					assetURLList.add(file.toURI().toURL().toString());
-				} catch (MalformedURLException ex) {
-					logger.error(BOX_SERVICE, BOX_1652, boxSettings.getAuthurl(), ex);
-				}
-			}
-		}
 	}
 
 	public static void scanFolder(File folder, String parentFolderName, Map<String, List<String>> folderMap) {

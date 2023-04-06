@@ -173,7 +173,7 @@ public class HttpUtility {
 
 		if (httpResponseCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
 			String errorStream = StringUtils.toString(httpURLConnection.getErrorStream());
-			logger.info(tenantId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, String.format("Server returned error response: %s with code %s: ", errorStream, httpResponseCode));
+			logger.info(String.format("Server returned error response: %s with code %s: ", errorStream, httpResponseCode));
 			throw new BoxRuntimeException(BoxConstants.LogCodes.BOX_1654, httpResponseCode, errorStream);
 		}
 		return httpURLConnection.getInputStream();
@@ -211,7 +211,7 @@ public class HttpUtility {
 
 		if (httpResponseCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
 			String errorStream = StringUtils.toString(httpURLConnection.getErrorStream());
-			logger.info(tenantId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, String.format("Server returned error response: %s with code %s: ", errorStream, httpResponseCode));
+			logger.info(String.format("Server returned error response: %s with code %s: ", errorStream, httpResponseCode));
 			throw new BoxRuntimeException(BoxConstants.LogCodes.BOX_1654, httpResponseCode, errorStream);
 		}
 		String response = StringUtils.toString(httpURLConnection.getInputStream());

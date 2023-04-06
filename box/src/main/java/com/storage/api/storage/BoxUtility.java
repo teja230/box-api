@@ -64,9 +64,9 @@ public class BoxUtility {
 			return HttpUtility.sendHttpDownloadRequest(httpURLConnection, "api");
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(apiError.toString(), ex);
 		} catch (Exception ex) {
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(ex.getMessage(), ex);
 			throw new IOException(String.format("Box connector failed to push the message to url [%s]", url));
 		}
 
@@ -86,13 +86,13 @@ public class BoxUtility {
 			jsonResponse = HttpUtility.sendHttpRequest(httpURLConnection, "api").getAsJsonObject();
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(apiError.toString());
 		} catch (Exception ex) {
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(ex.getMessage());
 			throw new IOException(String.format("Box connector failed to push the message to url [%s]", url));
 		}
 
-		logger.info(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, "Box Responded");
+		logger.info(String.format("Box Responded for url: %s response: %s", url, jsonResponse.toString()));
 		return jsonResponse.toString();
 	}
 
@@ -146,9 +146,9 @@ public class BoxUtility {
 			}
 		} catch (BoxRuntimeException ex) {
 			HttpUtility.extractHttpErrors(apiError, ex);
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(apiError.toString());
 		} catch (Exception ex) {
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, url, ex);
+			logger.error(ex.getMessage());
 			throw new IOException(String.format("BoxConstants connector failed to push the message to url [%s]", url));
 		}
 
@@ -182,7 +182,7 @@ public class BoxUtility {
 
 			return jws.getCompactSerialization();
 		} catch (IOException | JoseException | OperatorCreationException | PKCSException ex) {
-			logger.error(appId, BoxConstants.BOX_SERVICE, BoxConstants.LogCodes.BOX_1652, ex);
+			logger.error(ex.getMessage());
 		}
 		return null;
 	}

@@ -8,6 +8,8 @@ public final class BoxConstants {
 	public static final String ENTERPRISE_ID = "enterpriseID";
 	public static final String FILES = "files";
 	public static final String FOLDERS = "folders";
+	public static final String FOLDER = "folder";
+	public static final String SEARCH = "search";
 	public static final String CONTENT = "content";
 	public static final String ITEMS = "items";
 	public static final String PARENT_FOLDER = "parentFolder";
@@ -27,6 +29,12 @@ public final class BoxConstants {
 	public static final String FILE_TYPE_EXTENSION = "filetypeextension";
 	public static final String FILE = "file";
 	public static final String BACKSLASH = "/";
+	public static final String QUESTIONMARK = "?";
+	public static final String QUERY = "query";
+	public static final String TYPE = "type";
+
+	public static final String EQUALS = "=";
+	public static final String AMPERSAND = "&";
 
 	public static final String CONTENT_TYPE = "Content-Type";
 	public static final int MAX_RETRY_SERVICE_REQUEST = 3;
